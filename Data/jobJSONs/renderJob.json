@@ -1,0 +1,6 @@
+{
+    "jobType": "render",
+    "jobChannels": "0xFFFFFFFF",
+    "jobName": "renderJob",
+    "input": ""
+}
