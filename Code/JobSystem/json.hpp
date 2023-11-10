@@ -3015,7 +3015,7 @@ NLOHMANN_JSON_NAMESPACE_BEGIN
 namespace detail
 {
 
-/// struct to capture the start position of the current token
+/// struct to capture the start position of the current tokenType
 struct position_t
 {
     /// the total number of characters read
@@ -6634,7 +6634,7 @@ struct json_sax
     /*!
     @brief a floating-point number was read
     @param[in] val  floating-point value
-    @param[in] s    raw token value
+    @param[in] s    raw tokenType value
     @return whether parsing should proceed
     */
     virtual bool number_float(number_float_t val, const string_t& s) = 0;
@@ -6694,7 +6694,7 @@ struct json_sax
     /*!
     @brief a parse error occurred
     @param[in] position    the position in the input where the error occurs
-    @param[in] last_token  the last read token
+    @param[in] last_token  the last read tokenType
     @param[in] ex          an exception object describing the error
     @return whether parsing should proceed (must return false)
     */
@@ -7335,7 +7335,7 @@ template<typename BasicJsonType>
 class lexer_base
 {
   public:
-    /// token types for the parser
+    /// tokenType types for the parser
     enum class token_type
     {
         uninitialized,    ///< indicating the scanner is uninitialized
@@ -7398,7 +7398,7 @@ class lexer_base
                 return "'[', '{', or a literal";
             // LCOV_EXCL_START
             default: // catch non-enum values
-                return "unknown token";
+                return "unknown tokenType";
                 // LCOV_EXCL_STOP
         }
     }
@@ -8595,7 +8595,7 @@ scan_number_done:
     /*!
     @param[in] literal_text  the literal text to expect
     @param[in] length        the length of the passed literal text
-    @param[in] return_type   the token type to return on success
+    @param[in] return_type   the tokenType type to return on success
     */
     JSON_HEDLEY_NON_NULL(2)
     token_type scan_literal(const char_type* literal_text, const std::size_t length,
@@ -8617,7 +8617,7 @@ scan_number_done:
     // input management
     /////////////////////
 
-    /// reset token_buffer; current character is beginning of token
+    /// reset token_buffer; current character is beginning of tokenType
     void reset() noexcept
     {
         token_buffer.clear();
@@ -8727,7 +8727,7 @@ scan_number_done:
         return value_float;
     }
 
-    /// return current string value (implicitly resets the token; useful only once)
+    /// return current string value (implicitly resets the tokenType; useful only once)
     string_t& get_string()
     {
         return token_buffer;
@@ -8737,13 +8737,13 @@ scan_number_done:
     // diagnostics
     /////////////////////
 
-    /// return position of last read token
+    /// return position of last read tokenType
     constexpr position_t get_position() const noexcept
     {
         return position;
     }
 
-    /// return the last read token (for errors only).  Will never contain EOF
+    /// return the last read tokenType (for errors only).  Will never contain EOF
     /// (an arbitrary value that is not a valid char value, often -1), because
     /// 255 may legitimately occur.  May contain NUL, which should be escaped.
     std::string get_token_string() const
@@ -8908,10 +8908,10 @@ scan_number_done:
     /// whether the next get() call should just return current
     bool next_unget = false;
 
-    /// the start position of the current token
+    /// the start position of the current tokenType
     position_t position {};
 
-    /// raw input token string (for error messages)
+    /// raw input tokenType string (for error messages)
     std::vector<char_type> token_string {};
 
     /// buffer for variable-length tokens (numbers, strings)
@@ -12174,17 +12174,17 @@ class parser
         , m_lexer(std::move(adapter), skip_comments)
         , allow_exceptions(allow_exceptions_)
     {
-        // read first token
+        // read first tokenType
         get_token();
     }
 
     /*!
     @brief public parser interface
 
-    @param[in] strict      whether to expect the last token to be EOF
+    @param[in] strict      whether to expect the last tokenType to be EOF
     @param[in,out] result  parsed JSON value
 
-    @throw parse_error.101 in case of an unexpected token
+    @throw parse_error.101 in case of an unexpected tokenType
     @throw parse_error.102 if to_unicode fails or surrogate error
     @throw parse_error.103 if to_unicode fails
     */
@@ -12245,7 +12245,7 @@ class parser
     /*!
     @brief public accept interface
 
-    @param[in] strict  whether to expect the last token to be EOF
+    @param[in] strict  whether to expect the last tokenType to be EOF
     @return whether the input is a proper JSON text
     */
     bool accept(const bool strict = true)
@@ -12447,7 +12447,7 @@ class parser
                     case token_type::value_separator:
                     case token_type::end_of_input:
                     case token_type::literal_or_value:
-                    default: // the last token was unexpected
+                    default: // the last tokenType was unexpected
                     {
                         return sax->parse_error(m_lexer.get_position(),
                                                 m_lexer.get_token_string(),
@@ -12555,7 +12555,7 @@ class parser
         }
     }
 
-    /// get next token from lexer
+    /// get next tokenType from lexer
     token_type get_token()
     {
         return last_token = m_lexer.scan();
@@ -12593,7 +12593,7 @@ class parser
   private:
     /// callback function
     const parser_callback_t<BasicJsonType> callback = nullptr;
-    /// the type of the last read token
+    /// the type of the last read tokenType
     token_type last_token = token_type::uninitialized;
     /// the lexer
     lexer_t m_lexer;
@@ -13784,7 +13784,7 @@ class json_pointer
         return *this;
     }
 
-    /// @brief append an unescaped reference token at the end of this JSON pointer
+    /// @brief append an unescaped reference tokenType at the end of this JSON pointer
     /// @sa https://json.nlohmann.me/api/json_pointer/operator_slasheq/
     json_pointer& operator/=(string_t token)
     {
@@ -13807,14 +13807,14 @@ class json_pointer
         return json_pointer(lhs) /= rhs;
     }
 
-    /// @brief create a new JSON pointer by appending the unescaped token at the end of the JSON pointer
+    /// @brief create a new JSON pointer by appending the unescaped tokenType at the end of the JSON pointer
     /// @sa https://json.nlohmann.me/api/json_pointer/operator_slash/
     friend json_pointer operator/(const json_pointer& lhs, string_t token) // NOLINT(performance-unnecessary-value-param)
     {
         return json_pointer(lhs) /= std::move(token);
     }
 
-    /// @brief create a new JSON pointer by appending the array-index-token at the end of the JSON pointer
+    /// @brief create a new JSON pointer by appending the array-index-tokenType at the end of the JSON pointer
     /// @sa https://json.nlohmann.me/api/json_pointer/operator_slash/
     friend json_pointer operator/(const json_pointer& lhs, std::size_t array_idx)
     {
@@ -13835,7 +13835,7 @@ class json_pointer
         return res;
     }
 
-    /// @brief remove last reference token
+    /// @brief remove last reference tokenType
     /// @sa https://json.nlohmann.me/api/json_pointer/pop_back/
     void pop_back()
     {
@@ -13847,7 +13847,7 @@ class json_pointer
         reference_tokens.pop_back();
     }
 
-    /// @brief return last reference token
+    /// @brief return last reference tokenType
     /// @sa https://json.nlohmann.me/api/json_pointer/back/
     const string_t& back() const
     {
@@ -13859,14 +13859,14 @@ class json_pointer
         return reference_tokens.back();
     }
 
-    /// @brief append an unescaped token at the end of the reference pointer
+    /// @brief append an unescaped tokenType at the end of the reference pointer
     /// @sa https://json.nlohmann.me/api/json_pointer/push_back/
     void push_back(const string_t& token)
     {
         reference_tokens.push_back(token);
     }
 
-    /// @brief append an unescaped token at the end of the reference pointer
+    /// @brief append an unescaped tokenType at the end of the reference pointer
     /// @sa https://json.nlohmann.me/api/json_pointer/push_back/
     void push_back(string_t&& token)
     {
@@ -13882,7 +13882,7 @@ class json_pointer
 
   private:
     /*!
-    @param[in] s  reference token to be converted into an array index
+    @param[in] s  reference tokenType to be converted into an array index
 
     @return integer representation of @a s
 
@@ -13916,7 +13916,7 @@ class json_pointer
                 || errno == ERANGE // out of range
                 || JSON_HEDLEY_UNLIKELY(static_cast<std::size_t>(p_end - p) != s.size())) // incomplete read
         {
-            JSON_THROW(detail::out_of_range::create(404, detail::concat("unresolved reference token '", s, "'"), nullptr));
+            JSON_THROW(detail::out_of_range::create(404, detail::concat("unresolved reference tokenType '", s, "'"), nullptr));
         }
 
         // only triggered on special platforms (like 32bit), see also
@@ -13966,7 +13966,7 @@ class json_pointer
                 {
                     if (reference_token == "0")
                     {
-                        // start a new array if reference token is 0
+                        // start a new array if reference tokenType is 0
                         result = &result->operator[](0);
                     }
                     else
@@ -13993,7 +13993,7 @@ class json_pointer
 
                 /*
                 The following code is only reached if there exists a reference
-                token _and_ the current value is primitive. In this case, we have
+                tokenType _and_ the current value is primitive. In this case, we have
                 an error situation, because primitive values may only occur as
                 single value; that is, with an empty list of reference tokens.
                 */
@@ -14039,7 +14039,7 @@ class json_pointer
             // convert null values to arrays or objects before continuing
             if (ptr->is_null())
             {
-                // check if reference token is a number
+                // check if reference tokenType is a number
                 const bool nums =
                     std::all_of(reference_token.begin(), reference_token.end(),
                                 [](const unsigned char x)
@@ -14086,7 +14086,7 @@ class json_pointer
                 case detail::value_t::binary:
                 case detail::value_t::discarded:
                 default:
-                    JSON_THROW(detail::out_of_range::create(404, detail::concat("unresolved reference token '", reference_token, "'"), ptr));
+                    JSON_THROW(detail::out_of_range::create(404, detail::concat("unresolved reference tokenType '", reference_token, "'"), ptr));
             }
         }
 
@@ -14137,7 +14137,7 @@ class json_pointer
                 case detail::value_t::binary:
                 case detail::value_t::discarded:
                 default:
-                    JSON_THROW(detail::out_of_range::create(404, detail::concat("unresolved reference token '", reference_token, "'"), ptr));
+                    JSON_THROW(detail::out_of_range::create(404, detail::concat("unresolved reference tokenType '", reference_token, "'"), ptr));
             }
         }
 
@@ -14193,7 +14193,7 @@ class json_pointer
                 case detail::value_t::binary:
                 case detail::value_t::discarded:
                 default:
-                    JSON_THROW(detail::out_of_range::create(404, detail::concat("unresolved reference token '", reference_token, "'"), ptr));
+                    JSON_THROW(detail::out_of_range::create(404, detail::concat("unresolved reference tokenType '", reference_token, "'"), ptr));
             }
         }
 
@@ -14244,7 +14244,7 @@ class json_pointer
                 case detail::value_t::binary:
                 case detail::value_t::discarded:
                 default:
-                    JSON_THROW(detail::out_of_range::create(404, detail::concat("unresolved reference token '", reference_token, "'"), ptr));
+                    JSON_THROW(detail::out_of_range::create(404, detail::concat("unresolved reference tokenType '", reference_token, "'"), ptr));
             }
         }
 
@@ -14325,13 +14325,13 @@ class json_pointer
                 default:
                 {
                     // we do not expect primitive values if there is still a
-                    // reference token to process
+                    // reference tokenType to process
                     return false;
                 }
             }
         }
 
-        // no reference token left means we found a primitive value
+        // no reference tokenType left means we found a primitive value
         return true;
     }
 
@@ -14366,17 +14366,17 @@ class json_pointer
         for (
             // search for the first slash after the first character
             std::size_t slash = reference_string.find_first_of('/', 1),
-            // set the beginning of the first reference token
+            // set the beginning of the first reference tokenType
             start = 1;
             // we can stop if start == 0 (if slash == string_t::npos)
             start != 0;
-            // set the beginning of the next reference token
+            // set the beginning of the next reference tokenType
             // (will eventually be 0 if slash == string_t::npos)
             start = (slash == string_t::npos) ? 0 : slash + 1,
             // find next slash
             slash = reference_string.find_first_of('/', start))
         {
-            // use the text between the beginning of the reference token
+            // use the text between the beginning of the reference tokenType
             // (start) and the last slash (slash).
             auto reference_token = reference_string.substr(start, slash - start);
 
@@ -14396,7 +14396,7 @@ class json_pointer
                 }
             }
 
-            // finally, store the reference token
+            // finally, store the reference tokenType
             detail::unescape(reference_token);
             result.push_back(reference_token);
         }

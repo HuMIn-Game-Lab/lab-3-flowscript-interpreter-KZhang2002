@@ -1,14 +1,20 @@
 #include "JobSystem.h"
 #include "CustomJob.h"
 #include "CustomJobFactory.h"
+#include "FlowScriptInterpreter.h"
 #include <fstream>
 
 int main (){
-    std::cout << "Creating Job System" << std::endl;
+    string path = "../Data/graphs/graphA.dot";
+    auto* fsInterp = new FlowScriptInterpreter(path);
+
+    return 0;
+
+    cout << "Creating Job System" << endl;
 
     JobSystem* js = JobSystem::CreateOrGet();
 
-    std::cout << "Creating Worker Threads" << std::endl;
+    cout << "Creating Worker Threads" << endl;
 
     js -> CreateWorkerThread("Thread1", 0xFFFFFFFF);
     js -> CreateWorkerThread("Thread2", 0xFFFFFFFF);
@@ -64,9 +70,9 @@ int main (){
     int curJobID = 0;
 
     while (running) {
-        std::string command;
-        std::cout << "Enter stop, start, destroy, finish, status, job status, destroyjob, or finishjob\n";
-        std::cin >> command;
+        string command;
+        cout << "Enter stop, start, destroy, finish, status, job status, destroyjob, or finishjob\n";
+        cin >> command;
 
         if (command == "stop") {
             js -> Stop();
@@ -87,10 +93,10 @@ int main (){
         }
         else if (command == "finish"){
             js->FinishCompletedJobs();
-            std::cout << "Total jobs completed " << js->totalJobs << std::endl;
+            cout << "Total jobs completed " << js->totalJobs << endl;
         }
         else if (command == "finishjob"){
-            std::cout << "Finishing Job " << curJobID << std::endl;
+            cout << "Finishing Job " << curJobID << endl;
             js->FinishJob(curJobID);
             curJobID++;
         }
@@ -98,7 +104,7 @@ int main (){
             js->PrintAllJobsStatuses();
         }
         else {
-            std::cout << "Invalid Command" << std::endl;
+            cout << "Invalid Command" << endl;
         }
     }
 
