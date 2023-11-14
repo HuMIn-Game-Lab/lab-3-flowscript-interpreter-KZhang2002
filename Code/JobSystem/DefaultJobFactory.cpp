@@ -14,6 +14,10 @@ Job *DefaultJobFactory::CreateJob(const json& params) {
     string jobName = params["jobName"];
     cout << "\nCreating job of type \"" << jobType << "\" with name \"" << jobName << "\"." << endl;
 
+	if (params.find("callback") != params.end()) {
+
+	}
+
     if (jobType.compare("compile") == 0) {
         return new CompileJob(params);
     } else if (jobType.compare("render") == 0) {

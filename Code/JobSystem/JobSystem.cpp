@@ -78,7 +78,8 @@ void JobSystem::QueueJob(Job *job) {
     m_jobHistory.emplace_back(JobHistoryEntry(job->m_jobID,
                                               job->m_jobType,
                                               JOB_STATUS_QUEUED,
-                                              job->m_jobName));
+                                              job->m_jobName,
+											  job->condition));
     m_jobHistoryMutex.unlock();
 
     m_jobsQueuedMutex.lock();
@@ -251,7 +252,8 @@ void JobSystem::PrintAllJobsStatuses() const {
         << "ID: " << jobID << " | "
         << "Name: " << job.m_jobName << " | "
         << "Type: " << job.m_jobType << " | "
-        << "Status: " << JobStatusNames[job.m_jobStatus] << endl;
+        << "Status: " << JobStatusNames[job.m_jobStatus] << " | "
+		<< "Condition: " << job.condition << endl;
     }
     m_jobHistoryMutex.unlock();
 
@@ -266,7 +268,8 @@ void JobSystem::PrintJobStatus(int jobID) const {
          << "ID: " << jobID << " | "
          << "Name: " << job.m_jobName << " | "
          << "Type: " << job.m_jobType << " | "
-         << "Status: " << JobStatusNames[job.m_jobStatus] << endl;
+         << "Status: " << JobStatusNames[job.m_jobStatus] << " | "
+		 << "Condition: " << job.condition << endl;
 
     m_jobHistoryMutex.unlock();
 }
@@ -330,4 +333,20 @@ void JobSystem::CreateAndQueueJob(const json& params) {
     m_jobFactoriesMutex.unlock();
 
     QueueJob(job);
+}
+
+pair<bool, string> JobSystem::GetJobStatusByName(const string& name) const {
+	pair<bool, string> res{false, ""};
+	m_jobHistoryMutex.lock();
+	for (const JobHistoryEntry& job : m_jobHistory) {
+		int jobID = job.m_jobID;
+		if (job.m_jobName == name && (job.m_jobStatus == JOB_STATUS_COMPLETED || job.m_jobStatus == JOB_STATUS_RETIRED)) {
+			res.first = true;
+			res.second = job.condition;
+			break;
+		}
+	}
+	m_jobHistoryMutex.unlock();
+
+	return res;
 }

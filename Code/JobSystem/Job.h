@@ -52,6 +52,14 @@ public:
             if (name.empty()) cout << "Empty name given. Assigning job name \"N/A\"." << endl;
             m_jobName = name;
         }
+
+		if (input.find("callback") == input.end()) {
+			cout << "No callback given. Assigning callback \"N/A\"." << endl;
+		} else {
+			string callback = input["callback"];
+			if (callback.empty()) cout << "Empty callback given. Assigning callback \"N/A\"." << endl;
+			condition = callback;
+		}
     };
 
 
@@ -69,6 +77,7 @@ private:
 
     unsigned long m_jobChannels = 0xFFFFFFFF;
     string m_jobName            = "N/A";
+	string condition            = "N/A";
 
     json m_inputJSON;
 };

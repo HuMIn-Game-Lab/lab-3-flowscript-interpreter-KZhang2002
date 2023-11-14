@@ -31,8 +31,80 @@ void FlowScriptInterpreter::Interpret(ifstream &input) {
 	cout << endl;
     printLexResult();
 	cout << endl;
-
 	s_ParseSyntax();
+	cout << endl;
+	printMap();
+
+	Execute();
+}
+
+bool FlowScriptInterpreter::Execute() {
+	if(e_Flag) return false;
+
+	js -> CreateWorkerThread("Thread1", 0xFFFFFFFF);
+	js -> CreateWorkerThread("Thread2", 0xFFFFFFFF);
+	js -> CreateWorkerThread("Thread3", 0xFFFFFFFF);
+	js -> CreateWorkerThread("Thread4", 0xFFFFFFFF);
+	js -> CreateWorkerThread("Thread5", 0xFFFFFFFF);
+	js -> CreateWorkerThread("Thread6", 0xFFFFFFFF);
+	js -> CreateWorkerThread("Thread7", 0xFFFFFFFF);
+	js -> CreateWorkerThread("Thread8", 0xFFFFFFFF);
+	js -> CreateWorkerThread("Thread9", 0xFFFFFFFF);
+	js -> CreateWorkerThread("Thread10", 0xFFFFFFFF);
+
+	RunJobs();
+
+	return true;
+}
+
+void FlowScriptInterpreter::RunJobs() {
+	unordered_set<string> completedJobs;
+
+	// run all jobs with no dependencies
+	for (auto it = existingJobs.begin(); it != existingJobs.end(); ++it) {
+		if (dependencyMap[*it].empty()) {
+			ifstream jobInput("../Data/jobJSONs/" + *it + ".json");
+			if (jobInput.good()) {
+				js -> CreateAndQueueJob(JobSystem::ReadFile(jobInput));
+				completedJobs.insert(*it);
+			}
+			else cout << "File read error" << endl;
+			jobInput.close();
+		}
+	}
+
+	while (completedJobs.size() != existingJobs.size()) {
+		for (auto it = existingJobs.begin(); it != existingJobs.end(); ++it) {
+			if (completedJobs.find(*it) == completedJobs.end()) {
+				bool dependenciesFulfilled = false;
+				bool conditionFailed = false;
+				auto depMapIt = dependencyMap[*it].begin();
+				for (auto dep : dependencyMap[*it]) {
+					auto res = js->GetJobStatusByName(dep.first);
+					if (!res.first) break;
+					if (!dep.second.empty() && (dep.second != res.second)) {
+						conditionFailed = true;
+						completedJobs.insert(*it);
+						cout << "Conditions failed for " << *it << endl;
+						break;
+					}
+					if (++depMapIt == dependencyMap[*it].end()) {
+						dependenciesFulfilled = true;
+					}
+				}
+
+				if (dependenciesFulfilled && !conditionFailed) {
+					ifstream jobInput("../Data/jobJSONs/" + *it + ".json");
+					if (jobInput.good()) {
+						js -> CreateAndQueueJob(JobSystem::ReadFile(jobInput));
+						completedJobs.insert(*it);
+					}
+					else cout << "File read error" << endl;
+					jobInput.close();
+				}
+			}
+		}
+	}
 }
 
 void FlowScriptInterpreter::l_Lexer(ifstream &input) {
@@ -129,6 +201,22 @@ void FlowScriptInterpreter::printLexResult() {
         cout << endl;
         lineNum++;
     }
+}
+
+void FlowScriptInterpreter::printMap() {
+	for (const auto& entry : dependencyMap) {
+		std::cout << entry.first << " -> ";
+
+		const auto& vec = entry.second;
+		for (auto it = vec.begin(); it != vec.end(); ++it) {
+			std::cout << "(" << it->first << ", " << it->second << ")";
+			if (std::next(it) != vec.end()) {
+				std::cout << ", ";
+			}
+		}
+
+		std::cout << std::endl;
+	}
 }
 
 void FlowScriptInterpreter::i_ResetIterator() {
@@ -268,6 +356,7 @@ void FlowScriptInterpreter::s_ParseNodeStatement(vector<token> command) {
 	if ((*commandIter).type != WORD) e_HandleError(*commandIter, 2); //todo: change error code
 	if (e_Flag) return;
 	string startNode = (*commandIter).value;
+	existingJobs.insert(startNode);
 	commandIter++; index++;
 	if (commandIter == command.end()) {
 		dependencyMap[startNode]; // Add node to map
@@ -283,9 +372,11 @@ void FlowScriptInterpreter::s_ParseNodeStatement(vector<token> command) {
 	if ((*commandIter).type != WORD) e_HandleError(*commandIter, 2); //todo: change error code
 	if (e_Flag) return;
 	string endNode = (*commandIter).value;
+	existingJobs.insert(endNode);
 	commandIter++; index++;
 	if (commandIter == command.end()) {
-		dependencyMap[endNode].push_back(startNode); // Add node to map todo: doesnt check for duplicates
+		pair<string, string> startNodePair{startNode, ""};
+		dependencyMap[endNode].push_back(startNodePair); // Add node to map todo: doesnt check for duplicates
 		cout << "Added " << startNode << " -> " << endNode << endl;
 		return;
 	}
@@ -320,11 +411,15 @@ void FlowScriptInterpreter::s_ParseNodeStatement(vector<token> command) {
 	if (e_Flag) return;
 	commandIter++; index++;
 
+	pair<string, string> startNodePair{startNode, condition};
+	dependencyMap[endNode].push_back(startNodePair); // Add node to map todo: doesnt check for duplicates
+	cout << "Added " << startNode << " -> " << endNode << " | Condition: " << condition << endl;
+
 	if (commandIter != command.end()) e_HandleError(*commandIter, 2); //todo: change error code
 	if (e_Flag) return;
-
-	cout << "Added " << startNode << " -> " << endNode << " | Condition: " << condition << endl;
 }
+
+
 
 
 

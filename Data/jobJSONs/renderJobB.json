@@ -1,7 +1,7 @@
 {
     "jobType": "render",
     "jobChannels": "0xFFFFFFFF",
-    "jobName": "renderJob",
-    "callback": "success",
+    "jobName": "renderJobB",
+    "callback": "failure",
     "input": ""
 }

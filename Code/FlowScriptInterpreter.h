@@ -10,6 +10,7 @@
 #include <utility>
 #include <regex>
 #include <cctype>
+#include <unordered_set>
 
 enum tokenType {
 	SEMICOLON,
@@ -65,17 +66,17 @@ static const vector<string> graphTypes = {
 };
 
 static const unordered_map<int, string> eMessageMap = {
-		{1, R"(;)"},
-		{2, R"(;)"},
-		{3,     R"(->)"},
-		{4,    R"(\{)"},
-		{5,    R"(\})"},
+		{1,  R"(;)"},
+		{2,  R"(;)"},
+		{3,  R"(->)"},
+		{4,  R"(\{)"},
+		{5,  R"(\})"},
 		{6,  R"(\[)"},
 		{7,  R"(\])"},
-		{8,    R"(=)"},
-		{9,     R"(")"},
-		{10,      R"(\w+)"},
-		{11,   R"(.*)"}
+		{8,  R"(=)"},
+		{9,  R"(")"},
+		{10, R"(\w+)"},
+		{11, R"(.*)"}
 };
 
 struct token {
@@ -102,8 +103,10 @@ public:
 	FlowScriptInterpreter(const string& relativePath);
 	FlowScriptInterpreter(ifstream &input);
 
-	//main driver function
+	//main driver functions
 	void Interpret(ifstream &input);
+	bool Execute();
+	void RunJobs();
 
 	//l_Lexer functions todo: maybe move to private???
 	void l_Lexer(ifstream &input);
@@ -117,13 +120,15 @@ public:
 
 	//printer functions
 	void printLexResult();
+	void printMap();
 	bool isGood() { return e_Flag; }
 
 	string graphName;
 	string graphType;
 	vector<string> rawCodeText;
-	unordered_map<string, vector<string>> dependencyMap; // <node, node dependencies>
-	unordered_map<string, string> jobMap;               // <node name, node job type>
+	// <node name (end node), <node dependencies (start nodes), conditions (nullptr if does not exist)>>
+	unordered_map<string, vector<pair<string, string>>> dependencyMap;
+	unordered_set<string> existingJobs;
 	vector<vector<token>> lexResult;
 
 private:
@@ -149,6 +154,8 @@ private:
 
 	int  i_curLine      = 0;
 	int  i_curToken     = 0;
+
+	JobSystem* js = JobSystem::CreateOrGet();
 };
 
 

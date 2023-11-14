@@ -34,10 +34,20 @@ struct JobHistoryEntry{
             , m_jobStatus(jobStatus)
             , m_jobName(move(name)){};
 
+	JobHistoryEntry( int jobID, string jobType, JobStatus jobStatus, string name, string condition)
+			: m_jobID(jobID)
+			, m_jobType(move(jobType))
+			, m_jobStatus(jobStatus)
+			, m_jobName(move(name))
+			, condition(move(condition)){};
+
+
+
     int m_jobID;
     string m_jobType = "N/A";
     int m_jobStatus = JOB_STATUS_NEVER_SEEN;
     string m_jobName = "N/A";
+	string condition = "N/A";
 };
 
 class Job;
@@ -73,6 +83,7 @@ public:
     void FinishJob(int jobID);
     void DestroyJob(int jobID);
     void PrintAllJobsStatuses() const;
+	pair<bool, string> GetJobStatusByName(const string& name) const;
 
 private:
     Job* ClaimAJob(unsigned long workerJobFlags);

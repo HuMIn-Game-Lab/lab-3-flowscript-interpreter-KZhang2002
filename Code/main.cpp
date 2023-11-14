@@ -6,7 +6,7 @@
 
 int main (){
     string path = "../Data/graphs/graphA.dot";
-    auto* fsInterp = new FlowScriptInterpreter(path);
+    auto* testOne = new FlowScriptInterpreter(path);
 
     return 0;
 
