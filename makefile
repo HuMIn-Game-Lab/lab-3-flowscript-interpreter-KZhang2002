@@ -8,13 +8,14 @@ LIB_SRC = Code/JobSystem/JobWorkerThread.cpp \
           Code/JobSystem/JobSystem.cpp \
           Code/JobSystem/DefaultJobFactory.cpp \
           Code/JobSystem/CompileJob.cpp \
-          Code/JobSystem/RenderJob.cpp
+          Code/JobSystem/RenderJob.cpp \
+          Code/JobSystem/FlowScriptInterpreter.cpp
 
 # Source files for the executable
 EXE_SRC = Code/main.cpp \
           Code/CustomJob.cpp \
-          Code/CustomJobFactory.cpp \
-          Code/FlowScriptInterpreter.cpp
+          Code/CustomJobFactory.cpp
+          
 
 # Output directories and library/executable names
 OUTPUT_DIR = .
