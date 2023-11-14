@@ -13,12 +13,13 @@ LIB_SRC = Code/JobSystem/JobWorkerThread.cpp \
 # Source files for the executable
 EXE_SRC = Code/main.cpp \
           Code/CustomJob.cpp \
-          Code/CustomJobFactory.cpp
+          Code/CustomJobFactory.cpp \
+          Code/FlowScriptInterpreter.cpp
 
 # Output directories and library/executable names
 OUTPUT_DIR = .
 LIB_NAME = libJobSystem.so
-EXE_NAME = lab_2_flowscript_dsl_KZhang2002
+EXE_NAME = lab-3-flowscript-interpreter-KZhang2002
 
 # Targets
 compile: $(LIB_NAME) $(EXE_NAME)
