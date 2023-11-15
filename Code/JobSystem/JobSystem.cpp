@@ -336,6 +336,7 @@ void JobSystem::CreateAndQueueJob(const json& params) {
 }
 
 pair<bool, string> JobSystem::GetJobStatusByName(const string& name) const {
+	//return false if job not found
 	pair<bool, string> res{false, ""};
 	m_jobHistoryMutex.lock();
 	for (const JobHistoryEntry& job : m_jobHistory) {

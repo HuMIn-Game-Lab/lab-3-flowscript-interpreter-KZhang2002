@@ -5,8 +5,17 @@
 #include <fstream>
 
 int main (){
-    string path = "../Data/graphs/graphA.dot";
+    string path = "../Data/graphs/conditionalTestSuccess.dot";
     auto* testOne = new FlowScriptInterpreter(path);
+
+	path = "../Data/graphs/conditionalTestFail.dot";
+	auto* testTwo = new FlowScriptInterpreter(path);
+
+	path = "../Data/graphs/noSemiColon.dot";
+	auto* testThree = new FlowScriptInterpreter(path);
+
+	path = "../Data/graphs/noBracket.dot";
+	auto* testFour = new FlowScriptInterpreter(path);
 
     return 0;
 

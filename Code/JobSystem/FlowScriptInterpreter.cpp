@@ -32,10 +32,12 @@ void FlowScriptInterpreter::Interpret(ifstream &input) {
     printLexResult();
 	cout << endl;
 	s_ParseSyntax();
-	cout << endl;
+	if(e_Flag) return;
+
 	printMap();
 
 	Execute();
+	if(e_Flag) return;
 }
 
 bool FlowScriptInterpreter::Execute() {
@@ -58,7 +60,7 @@ bool FlowScriptInterpreter::Execute() {
 }
 
 void FlowScriptInterpreter::RunJobs() {
-	unordered_set<string> completedJobs;
+	unordered_map<string, bool> triedJobs; // <node name, job succeeded?>
 
 	// run all jobs with no dependencies
 	for (auto it = existingJobs.begin(); it != existingJobs.end(); ++it) {
@@ -66,25 +68,30 @@ void FlowScriptInterpreter::RunJobs() {
 			ifstream jobInput("../Data/jobJSONs/" + *it + ".json");
 			if (jobInput.good()) {
 				js -> CreateAndQueueJob(JobSystem::ReadFile(jobInput));
-				completedJobs.insert(*it);
+				triedJobs.insert(pair<string, bool> (*it, false));
 			}
 			else cout << "File read error" << endl;
 			jobInput.close();
 		}
 	}
 
-	while (completedJobs.size() != existingJobs.size()) {
+	// check untried jobs for dependency fulfillment
+	while (triedJobs.size() != existingJobs.size()) {
 		for (auto it = existingJobs.begin(); it != existingJobs.end(); ++it) {
-			if (completedJobs.find(*it) == completedJobs.end()) {
+			// check if job has been tried before
+			if (triedJobs.find(*it) == triedJobs.end()) {
 				bool dependenciesFulfilled = false;
 				bool conditionFailed = false;
 				auto depMapIt = dependencyMap[*it].begin();
-				for (auto dep : dependencyMap[*it]) {
-					auto res = js->GetJobStatusByName(dep.first);
-					if (!res.first) break;
-					if (!dep.second.empty() && (dep.second != res.second)) {
+				for (const auto& dep : dependencyMap[*it]) {
+					if (triedJobs.find(dep.first) == triedJobs.end()) break; //if dependency hasn't been tried yet, break
+					auto jobStatus = js->GetJobStatusByName(dep.first);
+
+					// checks if dependencies are fulfilled
+					// if conditional exists and conditional does not match callback, break
+					if (!jobStatus.first || (!dep.second.empty() && (dep.second != jobStatus.second))) {
 						conditionFailed = true;
-						completedJobs.insert(*it);
+						triedJobs.insert(pair<string, bool> (*it, false));
 						cout << "Conditions failed for " << *it << endl;
 						break;
 					}
@@ -97,7 +104,7 @@ void FlowScriptInterpreter::RunJobs() {
 					ifstream jobInput("../Data/jobJSONs/" + *it + ".json");
 					if (jobInput.good()) {
 						js -> CreateAndQueueJob(JobSystem::ReadFile(jobInput));
-						completedJobs.insert(*it);
+						triedJobs.insert(pair<string, bool> (*it, true));
 					}
 					else cout << "File read error" << endl;
 					jobInput.close();
@@ -145,9 +152,8 @@ vector<token> FlowScriptInterpreter::l_LexLine(const string& str, int currentRow
             cout << endl << endl;
             cout << "INVALID TOKEN \"" + tokenStr + "\"." << endl;
             cout << "LEXER ABORTED." << endl;
-            //TODO: ERROR HANDLING
-			token error = token(INVALID, (string &) "", currentRow, currentToken);
-			e_HandleError(error, 10); // Lexical error todo: error code
+			token error = token(INVALID, (string &) tokenStr, currentRow, currentToken);
+			e_HandleError(error, 1); // Lexical error
             return res;
         }
 
@@ -176,19 +182,53 @@ tokenType FlowScriptInterpreter::l_GetTokenType(string& str) {
 //todo: move this method to end
 void FlowScriptInterpreter::e_HandleError(const token& token, int errorCode) {
 	e_Flag = true;
-	//todo: write error handler
+	string path = "../Data/logs/" + graphName + "log.txt";
+
 	cout << "ERROR CODE " << errorCode << endl;
-	cout << "Error occurred on line: " << token.lineIndex + 1 << ", at token: " << token.tokenIndex << endl;
+	cout << "Error desc: " << errorMap[errorCode] << endl;
+	cout << "Error occurred on line: " << token.lineIndex + 1 << ", at token: " << token.tokenIndex + 1 << endl;
 	cout << "Token is of type: " << tokenTypeNames[token.type] << ", with value: " << token.value << endl;
+	cout << "Printing line:" << endl;
 	cout << rawCodeText[token.lineIndex] << endl;
+	cout << "This error text can be found in " << path << endl;
+	cout << "Check the documentation for further information about syntax and fixing errors." << endl;
+
+	ofstream output(path);
+	if (!output.is_open()) {
+		cerr << "Failed to open the file for writing." << endl;
+		return;  // or handle the error appropriately
+	}
+	output << "ERROR CODE " << errorCode << endl;
+	output << "Error desc: " << errorMap[errorCode] << endl;
+	output << "Error occurred on line: " << token.lineIndex + 1 << ", at token: " << token.tokenIndex + 1 << endl;
+	output << "Token is of type: " << tokenTypeNames[token.type] << ", with value: " << token.value << endl;
+	output << "Printing line where error occurs:" << endl << endl;
+	output << rawCodeText[token.lineIndex] << endl << endl;
+	output << "Check the documentation for further information about syntax and fixing errors." << endl;
+	output.close();
 }
 
 void FlowScriptInterpreter::e_HandleError(int lineNum, int errorCode) {
 	e_Flag = true;
-	//todo: write error handler
+	string path = "../Data/logs/" + graphName + "log.txt";
+
 	cout << "ERROR CODE " << errorCode << endl;
+	cout << "Error desc: " << errorMap[errorCode] << endl;
 	cout << "Error occurred on line: " << lineNum + 1 << endl;
 	cout << rawCodeText[lineNum] << endl;
+	cout << "This error text can be found in ../Data/logs/log.txt" << endl;
+
+	ofstream output(path);
+	if (!output.is_open()) {
+		cerr << "Failed to open the file for writing." << endl;
+		return;  // or handle the error appropriately
+	}
+	output << "ERROR CODE " << errorCode << endl;
+	output << "Error desc: " << errorMap[errorCode] << endl;
+	output << "Error occurred on line: " << lineNum + 1 << endl;
+	output << rawCodeText[lineNum] << endl;
+	output << "Check the documentation for further information about the error code." << endl;
+	output.close();
 }
 
 void FlowScriptInterpreter::printLexResult() {
@@ -221,8 +261,6 @@ void FlowScriptInterpreter::printMap() {
 
 void FlowScriptInterpreter::i_ResetIterator() {
 	i_braceFlag     = false;
-	i_bracketFlag   = false;
-	i_quoteFlag     = false;
 	i_endFlag       = false;
 	i_curLine       = 0;
 	i_curToken      = 0;
@@ -281,38 +319,42 @@ void FlowScriptInterpreter::s_ParseSyntax() {
 		switch(endSymbol.type) {
 			case LBRACE:
 				if (i_braceFlag) {
-					e_HandleError(curToken, 1); return; //todo: change error code
+					e_HandleError(curToken, 2); return;
 				}
 				i_braceFlag = true;
 				s_ParseGraphDefinition(command, i_curLine);
-				//todo: handle command
 				break;
 			case RBRACE:
 				if (!i_braceFlag) {
-					e_HandleError(curToken, 1); return; //todo: change error code
+					e_HandleError(curToken, 3); return;
 				}
 				i_braceFlag = false;
 				break;
 			case SEMICOLON:
 				if (!i_braceFlag) {
-					e_HandleError(curToken, 1); return; //todo: change error code
+					e_HandleError(curToken, 4); return;
 				}
 				if (command.size() > 1) s_ParseNodeStatement(command);
-				//todo: handle case where more commands after bracket end
+				break;
+			case EMPTY:
 				break;
 			default:
-				//todo: handle error
-				int a = 3;
+				//cout << "Impossible: " << curToken << " Line num: " <<  endl;
+				e_HandleError(curToken, 22); return;
 		}
 
 		if(e_Flag) {
-			//e_HandleError(i_curToken, i_curLine, 1); //todo: change error code
+			//e_HandleError(i_curToken, i_curLine, 1);
 			return;
 		}
 
 		curToken = i_GetNext();
 
 		cout << endl;
+	}
+
+	if (i_braceFlag) {
+		e_HandleError(curToken, 5); return;
 	}
 }
 
@@ -321,7 +363,7 @@ void FlowScriptInterpreter::s_ParseGraphDefinition(vector<token> command, int li
 
 	// Error guard measuring command size
 	if (command.size() != 2) {
-		e_HandleError(lineNum, 1); return; //todo: change error code // Too many/too few arguments for graph definition
+		e_HandleError(lineNum, 6); return; //
 		return;
 	}
 
@@ -329,7 +371,12 @@ void FlowScriptInterpreter::s_ParseGraphDefinition(vector<token> command, int li
 	token curToken = command[curIndex];
 
 	if (curToken.type != WORD) {
-		e_HandleError(curToken, 2); // Graph definition error
+		e_HandleError(curToken, 7); // Graph definition error
+		return;
+	}
+
+	if (!graphType.find(curToken.type)) {
+		e_HandleError(curToken, 21); // Graph definition error
 		return;
 	}
 
@@ -339,7 +386,7 @@ void FlowScriptInterpreter::s_ParseGraphDefinition(vector<token> command, int li
 	curToken = command[curIndex];
 
 	if (curToken.type != WORD) {
-		e_HandleError(curToken, 2); // Graph definition error
+		e_HandleError(curToken, 8); // Graph definition error
 		return;
 	}
 
@@ -353,7 +400,7 @@ void FlowScriptInterpreter::s_ParseNodeStatement(vector<token> command) {
 	cout << "Handling node statement" << endl;
 
 	// Possible stopping point
-	if ((*commandIter).type != WORD) e_HandleError(*commandIter, 2); //todo: change error code
+	if ((*commandIter).type != WORD) e_HandleError(*commandIter, 9);
 	if (e_Flag) return;
 	string startNode = (*commandIter).value;
 	existingJobs.insert(startNode);
@@ -364,58 +411,58 @@ void FlowScriptInterpreter::s_ParseNodeStatement(vector<token> command) {
 		return;
 	}
 
-	if ((*commandIter).type != ARROW) e_HandleError(*commandIter, 2); //todo: change error code
+	if ((*commandIter).type != ARROW) e_HandleError(*commandIter, 10);
 	if (e_Flag) return;
 	commandIter++; index++;
 
 	// Possible stopping point
-	if ((*commandIter).type != WORD) e_HandleError(*commandIter, 2); //todo: change error code
+	if ((*commandIter).type != WORD) e_HandleError(*commandIter, 11);
 	if (e_Flag) return;
 	string endNode = (*commandIter).value;
 	existingJobs.insert(endNode);
 	commandIter++; index++;
 	if (commandIter == command.end()) {
 		pair<string, string> startNodePair{startNode, ""};
-		dependencyMap[endNode].push_back(startNodePair); // Add node to map todo: doesnt check for duplicates
+		dependencyMap[endNode].push_back(startNodePair); // Add node to map
 		cout << "Added " << startNode << " -> " << endNode << endl;
 		return;
 	}
 
-	if ((*commandIter).type != LBRACKET) e_HandleError(*commandIter, 2); //todo: change error code
+	if ((*commandIter).type != LBRACKET) e_HandleError(*commandIter, 12);
 	if (e_Flag) return;
 	commandIter++; index++;
 
-	if ((*commandIter).type != WORD) e_HandleError(*commandIter, 2); //todo: change error code
-	if ((*commandIter).value != "condition") e_HandleError(*commandIter, 2); //todo: change error code
+	if ((*commandIter).type != WORD) e_HandleError(*commandIter, 13);
+	if ((*commandIter).value != "condition") e_HandleError(*commandIter, 14);
 	if (e_Flag) return;
 	commandIter++; index++;
 
-	if ((*commandIter).type != EQUALS) e_HandleError(*commandIter, 2); //todo: change error code
+	if ((*commandIter).type != EQUALS) e_HandleError(*commandIter, 15);
 	if (e_Flag) return;
 	commandIter++; index++;
 
-	if ((*commandIter).type != QUOTE) e_HandleError(*commandIter, 2); //todo: change error code
+	if ((*commandIter).type != QUOTE) e_HandleError(*commandIter, 16);
 	if (e_Flag) return;
 	commandIter++; index++;
 
-	if ((*commandIter).type != WORD) e_HandleError(*commandIter, 2); //todo: change error code
+	if ((*commandIter).type != WORD) e_HandleError(*commandIter, 17);
 	if (e_Flag) return;
 	string condition = (*commandIter).value;
 	commandIter++; index++;
 
-	if ((*commandIter).type != QUOTE) e_HandleError(*commandIter, 2); //todo: change error code
+	if ((*commandIter).type != QUOTE) e_HandleError(*commandIter, 18);
 	if (e_Flag) return;
 	commandIter++; index++;
 
-	if ((*commandIter).type != RBRACKET) e_HandleError(*commandIter, 2); //todo: change error code
+	if ((*commandIter).type != RBRACKET) e_HandleError(*commandIter, 19);
 	if (e_Flag) return;
 	commandIter++; index++;
 
 	pair<string, string> startNodePair{startNode, condition};
-	dependencyMap[endNode].push_back(startNodePair); // Add node to map todo: doesnt check for duplicates
+	dependencyMap[endNode].push_back(startNodePair); // Add node to map
 	cout << "Added " << startNode << " -> " << endNode << " | Condition: " << condition << endl;
 
-	if (commandIter != command.end()) e_HandleError(*commandIter, 2); //todo: change error code
+	if (commandIter != command.end()) e_HandleError(*commandIter, 20);
 	if (e_Flag) return;
 }
 

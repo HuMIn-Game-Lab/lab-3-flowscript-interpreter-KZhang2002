@@ -11,6 +11,7 @@
 #include <regex>
 #include <cctype>
 #include <unordered_set>
+#include <filesystem>
 
 enum tokenType {
 	SEMICOLON,
@@ -78,6 +79,32 @@ static const unordered_map<int, string> eMessageMap = {
 		{10, R"(\w+)"},
 		{11, R"(.*)"}
 };
+
+static unordered_map<int, string> errorMap = {
+		{1, "Invalid token processed. The only valid tokens are ' { ', ' } ', ' [ ', ' ] ', ' = ', ' “ ', and words. Only words can only contain characters a-z, A-Z, 0-9, and/or underscores."},
+		{2, "Duplicate ‘{‘ used. Nested brackets are not allowed."},
+		{3, "Right brace has no matching left brace."},
+		{4, "Semicolons cannot be used outside of braces."},
+		{5, "Left brace has no matching right brace."},
+		{6, "Too many/too few arguments for graph definition."},
+		{7, "Graph type is not a word."},
+		{8, "Graph name is invalid. Names can only contain characters a-z, A-Z, 0-9, and/or underscores."},
+		{9, "Node definition does not include a valid name for the source node."},
+		{10, "Node definition does not include a valid arrow operator."},
+		{11, "Node definition does not include a valid name for the end node."},
+		{12, "Node definition has too many tokens."},
+		{13, "Node attribute is not a word."},
+		{14, "Node attribute is invalid."},
+		{15, "Invalid attribute operator."},
+		{16, "Invalid attribute assignment value. Value must be enclosed with quotation marks."},
+		{17, "Attribute assignment value is not a word."},
+		{18, "Attribute assignment value is missing end quotes. Value must be fully enclosed with quotation marks."},
+		{19, "Bracket pair is not matched."},
+		{20, "Node assignment has too many tokens."},
+		{21, "Graph type does not exist."},
+		{22, "Statement does not end properly. Use brackets, braces, or semicolons to end statements."}
+};
+
 
 struct token {
 public:
@@ -148,8 +175,8 @@ private:
 	token i_GetNext();
 
 	bool i_braceFlag    = false;
-	bool i_bracketFlag  = false;
-	bool i_quoteFlag    = false;
+	//bool i_bracketFlag  = false;
+	//bool i_quoteFlag    = false;
 	bool i_endFlag      = false;
 
 	int  i_curLine      = 0;

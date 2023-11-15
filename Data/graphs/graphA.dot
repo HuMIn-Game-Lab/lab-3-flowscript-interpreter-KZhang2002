@@ -1,9 +1,0 @@
-digraph flowscript{
-    renderJobA;
-    renderJobB -> renderJobA;
-    renderJobC -> renderJobA;
-
-    renderJobD -> renderJobB;
-    renderJobB -> renderJobE [condition="success"];
-    renderJobD -> renderJobC;
-}
